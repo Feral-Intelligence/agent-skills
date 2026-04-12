@@ -8,9 +8,6 @@
     "test": "node tests/evals.mjs",
     "test:one": "node tests/evals.mjs --only"
   },
-  "optionalDependencies": {
-    "@anthropic-ai/sdk": "^0.33.0"
-  },
   "engines": {
     "node": ">=18"
   }

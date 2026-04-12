@@ -36,30 +36,15 @@ Fleet is a paid product in invite-only beta. The binary is free to install and i
 
 ## Testing
 
-Skills are tested with a scripted eval harness: a set of synthetic user prompts gets sent to a Claude model with the skill pre-loaded as system context, and the response is checked against expected (and forbidden) patterns. Happy paths, edge cases, and anti-patterns (e.g., the skill must never suggest `go install` for Fleet) all get covered.
-
-Run locally:
+Skills are tested with a scripted eval harness: synthetic user prompts get sent to Claude with the skill pre-loaded as system context, and the response is checked against expected (and forbidden) patterns. Happy paths, edge cases, and anti-patterns (e.g., the skill must never suggest `go install` for Fleet) all get covered.
 
 ```sh
-npm install
-npm test
+npm test                           # all scenarios
+npm run test:one -- happy-path     # one scenario
+EVAL_VERBOSE=1 npm test            # show full responses on failure
 ```
 
-Local runs use `claude -p` (Claude Code headless mode) as the backend, so they reuse your existing Claude Code auth — no `ANTHROPIC_API_KEY` needed.
-
-Run a single scenario:
-
-```sh
-npm run test:one -- happy-path
-```
-
-See full model responses on failure:
-
-```sh
-EVAL_VERBOSE=1 npm test
-```
-
-CI runs evals via the Anthropic API (`EVAL_BACKEND=api`) on every push that touches `skills/` or `tests/`. The workflow is at [`.github/workflows/evals.yml`](.github/workflows/evals.yml).
+Uses `claude -p` (Claude Code headless mode) as the backend, so it reuses your existing Claude Code auth. No `ANTHROPIC_API_KEY` required, no dependencies to install. Run it before every push.
 
 ## License
 
