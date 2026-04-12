@@ -1,0 +1,19 @@
+{
+  "name": "feral-intelligence-agent-skills",
+  "owner": {
+    "name": "Feral Intelligence",
+    "url": "https://fleetctl.ai"
+  },
+  "plugins": [
+    {
+      "name": "fleet",
+      "source": ".",
+      "description": "Fleet skills for installing, configuring, and operating an AI agent fleet",
+      "version": "0.1.0",
+      "repository": "https://github.com/Feral-Intelligence/agent-skills.git",
+      "license": "Apache-2.0",
+      "keywords": ["fleet", "ai-agents", "claude-code", "cursor"],
+      "category": "agent-management"
+    }
+  ]
+}
