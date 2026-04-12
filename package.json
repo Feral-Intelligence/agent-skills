@@ -1,0 +1,17 @@
+{
+  "name": "@feral-intelligence/agent-skills",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drop-in agent skills for Fleet — tested with a scripted eval harness",
+  "scripts": {
+    "test": "node tests/evals.mjs",
+    "test:one": "node tests/evals.mjs --only"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.33.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
