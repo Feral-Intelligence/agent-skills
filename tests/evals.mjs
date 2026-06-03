@@ -115,8 +115,10 @@ const fleetManagerScenarios = [
       /dispatch|the fleet|agent/i,
     ],
     forbid: [
-      // Must not promise to implement it directly
-      /^(sure|okay|ok|i'?ll)\b.*\b(add|implement|write|create|build) (the|a|an) .*(toggle|component|code|css)/im,
+      // Must not promise to implement it directly. The negative lookahead
+      // keeps a valid dispatch reply ("Sure, I'll create a GitHub issue to add
+      // the toggle") from tripping the forbid — those name a dispatch target.
+      /^(sure|okay|ok|i'?ll)\b(?!.*\b(agent|issue|ticket|fleet|dispatch)\b).*\b(add|implement|write|create|build) (the|a|an) .*(toggle|component|code|css)/im,
     ],
   },
   {
@@ -132,8 +134,10 @@ const fleetManagerScenarios = [
     prompt: "I labeled an issue 'ready' 20 minutes ago but no agent ever started on it. What's going on?",
     expect: [/watcher/i, /fleet watcher (status|start)|fleet log|fleet agent logs/i],
     forbid: [
-      // The fix is to diagnose the cause, not to keep re-toggling the label
-      /just (re-?)?(add|remove|toggle).*(ready) label.*(again|to (retry|trigger))/i,
+      // The fix is to diagnose the cause, not to keep re-toggling the label.
+      // The negative lookbehind lets the model correctly *advise against*
+      // re-toggling ("do not just toggle the ready label again") without failing.
+      /(?<!(don'?t|do not|never|avoid)\s)just (re-?)?(add|remove|toggle).*(ready) label.*(again|to (retry|trigger))/i,
     ],
   },
   {
@@ -196,6 +200,11 @@ async function runScenarioRow(skill, scenario, results) {
 
 async function main() {
   const onlyFlag = process.argv.indexOf("--only");
+  // --only must be followed by a scenario name, not end-of-args or another flag.
+  if (onlyFlag >= 0 && (onlyFlag + 1 >= process.argv.length || process.argv[onlyFlag + 1].startsWith("-"))) {
+    console.error("Error: --only requires a scenario name");
+    process.exit(1);
+  }
   const filter = onlyFlag >= 0 ? process.argv[onlyFlag + 1] : null;
 
   const planned = suites
