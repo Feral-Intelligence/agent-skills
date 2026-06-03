@@ -1,7 +1,7 @@
 // Scenario-driven evaluation of the Fleet skills.
 //
 // Run: npm test
-// Run one scenario: npm run test:one happy-path
+// Run one scenario: npm run test:one -- happy-path
 //
 // Each scenario loads a SKILL.md, sends a synthetic user prompt with the skill
 // as system context, and regex-checks the response. Backend details live in
@@ -110,8 +110,10 @@ const fleetManagerScenarios = [
     name: "dispatch-not-code",
     prompt: "Manage my fleet. I need a dark-mode toggle added to the settings page.",
     expect: [
-      // Should turn it into dispatched work, not start editing
-      /label(ed)? .?ready.?|fleet task assign|create (a |an )?(github )?issue/i,
+      // Should turn it into dispatched work, not start editing. Allow arbitrary
+      // words between "label" and "ready" ("label it ready", "label the issue as
+      // ready"); alternation grouped explicitly.
+      /(label(s|ed)?\b.*\bready\b|fleet task assign|create (a |an )?(github )?issue)/i,
       /dispatch|the fleet|agent/i,
     ],
     forbid: [
