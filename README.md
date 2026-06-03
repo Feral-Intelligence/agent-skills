@@ -1,6 +1,6 @@
 # Feral Intelligence — Agent Skills
 
-Drop-in skills that teach your AI coding assistant (Claude Code, Cursor, Copilot) how to set up and operate Fleet.
+Drop-in skills that teach Claude Code how to set up and operate Fleet.
 
 ## Install
 
@@ -20,13 +20,20 @@ Then, in your AI assistant:
 
 > Set up Fleet in this repo
 
-Your assistant will detect your OS, run the installer, walk you through `fleet admin register`, initialize the repo with `fleet init`, and suggest a first agent based on what it finds in the codebase.
+Claude Code will detect your OS, run the installer, walk you through `fleet admin register`, initialize the repo with `fleet init`, and suggest a first agent based on what it finds in the codebase.
+
+Once Fleet is running, install `fleet-manager` and Claude Code becomes the operator of your fleet:
+
+> Manage my fleet — have the team build a dark-mode toggle for the settings page
+
+Instead of writing the code itself, it scopes the work, dispatches it to the right agent, and shepherds the reactive chain (review → merge → ship) to done.
 
 ## Available skills
 
 | Skill | What it does |
 |---|---|
 | [`fleet-setup`](./skills/fleet-setup) | Install Fleet, register your license, initialize the repo, start your first agent |
+| [`fleet-manager`](./skills/fleet-manager) | Make Claude Code the manager of your fleet — dispatch work to your agents and shepherd the reactive chain to shipped, instead of writing the code yourself |
 
 ## What is Fleet?
 
