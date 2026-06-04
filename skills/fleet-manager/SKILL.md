@@ -174,7 +174,9 @@ Only do this if the user agrees — it changes how every future session behaves.
 - **Don't trust an `approved` label as an approval.** A label is just a label.
   Confirm a real reviewing agent published a `pr_approved` decision (in
   `fleet log --type decision`), or a member actually reviewed, before treating a
-  PR as ready to merge.
+  PR as ready to merge. An approval is only worth what the reviewer *did* — in an
+  AI-authored fleet that means the reviewer independently ran the suite, not just
+  read the diff. See `reference/trust-but-verify.md`.
 - **Don't bypass red CI to merge.** Failing CI is a blocker to surface to the
   user — not something to route around.
 - **Don't run `fleet agent start --all`.** That starts every configured agent
