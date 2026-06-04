@@ -29,7 +29,7 @@ fleet the second one is the one that bites you:
 The only way to know is to pull the branch and run it. The CPU cost of that run
 is the cost of *not* shipping broken code to your main branch — pay it.
 
-## Make the reviewer's run the ENFORCED gate
+## Gate the merge on the reviewer's run, not CI
 
 This is the configuration that makes verification real. If your merge gate keys
 on CI passing, and CI is flaky, disabled, or slow, your reviewers' independent
