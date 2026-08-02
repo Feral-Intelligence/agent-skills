@@ -26,14 +26,15 @@ Once Fleet is running, install `fleet-manager` and Claude Code becomes the opera
 
 > Manage my fleet — have the team build a dark-mode toggle for the settings page
 
-Instead of writing the code itself, it scopes the work, dispatches it to the right agent, and shepherds the reactive chain (review → merge → ship) to done.
+Instead of writing the code itself, it scopes the work, dispatches it through an explicit task or saved workflow, and shepherds the declared review → approval → merge path to done.
 
 ## Available skills
 
 | Skill | What it does |
 |---|---|
 | [`fleet-setup`](./skills/fleet-setup) | Install Fleet, register your license, initialize the repo, start your first agent |
-| [`fleet-manager`](./skills/fleet-manager) | Make Claude Code the manager of your fleet — dispatch work to your agents and shepherd the reactive chain to shipped, instead of writing the code yourself |
+| [`fleet-manager`](./skills/fleet-manager) | Make Claude Code the manager of your fleet — dispatch work through agents and saved workflows and shepherd it to shipped instead of writing the code itself |
+| [`fleet-lessons`](./skills/fleet-lessons) | Let Claude Code recognize durable corrections, propose them to Fleet, load signed policy before work, and govern approval, application, drift, and reversal without a Fleet-hosted LLM |
 
 ## What is Fleet?
 

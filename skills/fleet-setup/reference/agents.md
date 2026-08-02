@@ -77,6 +77,6 @@ After `fleet agent start <name>`:
 1. "The agent is now running in a tmux session named `fleet-<name>`."
 2. "To watch what it's doing: `tmux attach -t fleet-<name>`. Press Ctrl-B then D to detach."
 3. "To assign a specific task: `fleet task assign <name> 'your task description'`."
-4. "The watcher daemon will trigger this agent reactively when you label a GitHub issue `ready`. Start the watcher with `fleet watcher start` when you're ready for reactive mode."
+4. "Use `fleet task assign <name> 'your task description'` for a direct task, or run a saved workflow that selects this agent type. Start `fleet watcher start` only when you want it to host that workflow's declared triggers or schedules."
 
 Don't start the watcher yourself. The user should do that deliberately.

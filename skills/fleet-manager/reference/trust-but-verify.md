@@ -53,10 +53,9 @@ If one agent both writes and reviews, the review is theater. Separate them:
 | **qa-engineer** | independently checks out and runs the full suite |
 | **tech-lead** | reads the diff for logic / security / design |
 
-A `pr_changes_requested` from any reviewer sends the PR back to the developer —
-the reactive chain re-dispatches it automatically — and the cycle repeats until
-clean. A real revision round is the *healthy* signal, not a delay to optimize
-away.
+A `pr_changes_requested` result follows the workflow's declared fix route back
+to development, and the bounded review loop repeats until clean or exhausted. A
+real revision round is the *healthy* signal, not a delay to optimize away.
 
 ## The operator's takeaway
 

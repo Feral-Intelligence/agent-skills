@@ -10,7 +10,7 @@ metadata:
 
 # Fleet Setup
 
-You are walking a user through installing and configuring **Fleet** in their repository. Fleet is a Go CLI that manages long-running AI agents running in tmux sessions, orchestrated by a watcher daemon that reacts to GitHub labels.
+You are walking a user through installing and configuring **Fleet** in their repository. Fleet is a Go CLI that manages long-running AI agents in tmux and runs explicit saved workflows. Its watcher hosts workflow workers, declared label/cron triggers, connector sync, schedules, and brain supervision; it does not reactively launch agents from subscription fields.
 
 Your job: get them from zero to a working agent in under 5 minutes. Be concrete, run commands yourself where possible, and ask only when you genuinely need information you can't discover.
 
@@ -18,7 +18,7 @@ Your job: get them from zero to a working agent in under 5 minutes. Be concrete,
 
 - **macOS or Linux.** Windows users need WSL2.
 - **tmux** installed. Fleet runs every agent in a tmux session.
-- **gh CLI** installed and authenticated (`gh auth status`). Fleet uses it to poll GitHub for label changes and PR reviews.
+- **gh CLI** installed and authenticated (`gh auth status`). Fleet uses it for repository work, workflow label triggers, and PR review/merge operations.
 - **A registration code** from their Fleet admin dashboard. Fleet is a paid product in closed beta — without a valid license, `fleet agent start`, `fleet brain start`, `fleet watcher start`, and `fleet pipeline run` all refuse to run. If they don't have a code yet, send them to https://fleetctl.ai/#contact and stop here.
 
 Check all four prerequisites at the start. If any are missing, stop and help the user install them before proceeding. See `reference/troubleshooting.md` for specific fixes.
@@ -91,7 +91,7 @@ Or bare:
 fleet init
 ```
 
-This creates `.fleet/config.yaml`, scaffolds prompt files in `.fleet/prompts/`, and configures GitHub labels used by the watcher daemon (`ready`, `needs-review`, `changes-requested`, `shipped`).
+This creates `.fleet/config.yaml`, scaffolds prompt files in `.fleet/prompts/`, and configures GitHub labels that saved workflows may use as explicit triggers (`ready`, `needs-review`, `changes-requested`, `shipped`).
 
 **Verify:**
 
@@ -135,12 +135,13 @@ Tell the user: Ctrl-B then D to detach without stopping the agent.
 
 At this point Fleet is installed, licensed, initialized, and running at least one agent. The user should:
 
-1. Label a GitHub issue `ready` to trigger the agent reactively (if they started `backend-dev`, `frontend-dev`, or similar). The watcher needs to be running: `fleet watcher start`.
-2. Or assign a task directly: `fleet task assign <agent> "<task description>"`.
-3. Open the fleet status dashboard: `fleet status`.
-4. Read the full CLI reference: https://fleetctl.ai/docs/cli-reference
+1. Assign a task directly: `fleet task assign <agent> "<task description>"`.
+2. Or inspect the saved workflows with `fleet genflow list`, then run the one that matches the user's delivery process.
+3. Start `fleet watcher start` only when the user wants it to host declared workflow triggers, schedules, connector sync, and supervision.
+4. Open the fleet status dashboard: `fleet status`.
+5. Read the full CLI reference: https://fleetctl.ai/docs/cli-reference
 
-**Critical: do NOT start the watcher daemon automatically.** The watcher polls GitHub every 2 minutes and will start agents reactively. Make sure the user understands that before running `fleet watcher start` in the background.
+**Critical: do NOT start the watcher daemon automatically.** Show the user the saved workflows, triggers, and schedules it will host before running it in the background.
 
 ## If something goes wrong
 
@@ -156,6 +157,6 @@ Read `reference/troubleshooting.md` for the full list. Most common failures:
 
 - **Don't suggest `go install`.** The curl|sh installer is the supported path. It downloads a prebuilt binary with the version string baked in.
 - **Don't skip the license step.** Every command that starts agents or daemons will fail without it.
-- **Don't start the watcher daemon on the user's behalf** without explaining what it does. It's a long-running background process that polls GitHub and starts agents reactively.
+- **Don't start the watcher daemon on the user's behalf** without explaining the saved workflow triggers, schedules, sync, and supervision work it will host.
 - **Don't edit `.fleet/prompts/*.md` for the user** unless they specifically ask. Those files define agent behavior and should be reviewed before running.
 - **Don't run `fleet agent start --all`.** That starts every agent in the config, burning tokens on agents the user may not need.

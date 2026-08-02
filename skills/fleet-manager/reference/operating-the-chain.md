@@ -1,75 +1,66 @@
-# Operating the Reactive Chain
+# Operating Saved Workflows
 
-Fleet coordinates work through a **reactive event chain** — not a central
-scheduler, and not pipelines. Understanding the chain is the core of managing a
-fleet well.
+Fleet coordinates multi-step delivery through explicit, versioned workflows.
+The watcher hosts those workflow workers and evaluates only label or cron
+triggers declared by a saved workflow. Legacy agent `subscribes_to` fields do
+not launch agents.
 
-## The chain, end to end
+## A delivery workflow, end to end
 
+```text
+Issue or explicit input
+  -> Refine step
+  -> Develop step creates a branch and PR
+  -> Review/fix loop
+  -> Human or policy approval gate
+  -> Merge step
+  -> Announce step
 ```
-Issue labeled `ready`
-  → watcher publishes ticket_ready
-  → subscribed developer agent starts
-  → agent branches, implements, tests, opens a PR, labels it `needs-review`
-  → watcher publishes pr_needs_review
-  → tech-lead + qa-lead start, review, publish pr_approved (or pr_changes_requested)
-  → release-manager starts, merges the PR, labels it `shipped`
-  → watcher publishes ticket_shipped
-  → managers/leads see it in their next run
-```
 
-Each arrow is an event on the shared fabric bus. Agents subscribe to events;
-when a matching event fires, the watcher starts that agent. Nothing is polled by
-you — you create the first signal (`ready`) and the chain propagates.
+The workflow definition selects stable agent types, supplies each step's exact
+task instructions, declares routes and retry bounds, and embeds the definition
+in the run. Existing runs do not change when the saved definition is edited.
 
 ## Dispatching well
 
-The single highest-leverage thing you do is **write good tickets**. The agent
-only knows what the issue says.
+The highest-leverage thing you do is write good workflow input. A good issue or
+task has:
 
-A good dispatch issue has:
+- A clear, single-sentence outcome.
+- Acceptance criteria the implementer and reviewer can check.
+- Pointers to relevant files or modules, if known.
+- Constraints such as API compatibility or protected areas.
 
-- A clear, single-sentence outcome ("Add rate limiting to `POST /api/login`").
-- Acceptance criteria the agent — and the reviewer — can check against.
-- Pointers to the relevant files or modules, if you know them.
-- Constraints ("don't touch the public API", "must stay backward compatible").
+Inspect `fleet genflow list`, choose the workflow whose graph matches the work,
+and run it with the issue or task as input. If that workflow declares a label
+trigger, applying the configured label is an explicit way to start that saved
+graph; the label does not choose an agent by subscription.
 
-Then label it `ready`. The `.fleet/config.yaml` subscriptions decide which agent
-picks up which label/event, so match the work to a label an agent is subscribed
-to.
-
-For work that doesn't warrant an issue (a quick spike, a one-off):
+For a one-off directed task that does not need a workflow:
 
 ```sh
 fleet task assign <agent> "<clear task>"
 ```
 
-## Reviewing & shipping
+## Reviewing and shipping
 
-The chain self-reviews: reviewer agents pick up `needs-review` PRs and publish a
-decision. Your job is oversight, not re-doing the review:
+- Inspect the run's current step, artifacts, review result, and gate documents.
+- A real approval is a reviewer decision or human member review. An `approved`
+  label alone is not an approval.
+- Merge only through the workflow's merge gate after review, green checks, and
+  required approval.
 
-- Watch `fleet log --type decision` for `pr_approved` / `pr_changes_requested`.
-- A real approval is a reviewer agent's decision (or a human member review). An
-  `approved` *label* alone is **not** an approval — see `guardrails.md`.
-- release-manager merges approved, mergeable PRs and labels them `shipped`. It
-  gates on the release check — it will not merge on a label alone.
+## When a run stalls
 
-## When the chain stalls
+Walk the declared graph backward:
 
-A stall looks like: a label sitting unchanged, a PR with no review, an issue
-labeled `ready` that never started an agent. Walk the chain backward:
+1. If a declared trigger did not fire, check `fleet watcher status`, then the
+   saved workflow's trigger configuration.
+2. Inspect the run and current step. Check the selected agent's logs when a step
+   launched but did not complete.
+3. Read `fleet log --since 1h` for the run, artifact, review, and gate events.
+4. Surface real blockers such as red CI, a missing approval, merge conflict, or
+   unavailable credential.
 
-1. **Is the watcher running?** `fleet watcher status`. No watcher → no events
-   fire. `fleet watcher start`.
-2. **Did the agent start and exit?** `fleet agent logs <name>`. An agent that
-   exits immediately is usually missing its skills or a prerequisite — check
-   `fleet skills install --dry-run` and `fleet doctor`.
-3. **Did the event publish?** `fleet log --since 1h` — look for the expected
-   event (`ticket_ready`, `pr_needs_review`). A missing event means the label
-   watcher didn't see the label, or it isn't a label the watcher watches.
-4. **Is the agent waiting on a real blocker?** Failing CI, a missing approval, a
-   merge conflict. That's a blocker to surface — not to force past.
-
-Fix the cause and the chain resumes on its own: it's level-triggered and
-self-healing. Don't toggle labels to fake progress.
+Fix the cause and resume through the workflow's supported route. Do not toggle
+labels, fabricate events, or reassign in-flight work to fake progress.

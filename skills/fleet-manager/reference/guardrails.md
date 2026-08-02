@@ -14,10 +14,10 @@ you to take one task directly.
 You DO edit `.fleet/` config and prompts — that's managing the roster — but show
 those changes to the user before applying them.
 
-## The chain is self-healing — never force it by hand
+## Never force a workflow by hand
 
-If work isn't moving, something real is wrong: the watcher is down, an agent
-errored on startup, an event didn't publish, or there's a genuine blocker.
+If work isn't moving, something real is wrong: a declared trigger is not being
+hosted, an agent step errored, a route cannot proceed, or there is a blocker.
 Manually toggling `ready` / `needs-review` / `shipped`, or re-assigning a ticket
 that's already in flight, papers over the defect and tends to spawn duplicate or
 conflicting work.
@@ -46,12 +46,12 @@ defect), that too is something to surface, not silently bypass.
 
 - Never `fleet agent start --all` — it starts every configured agent and burns
   tokens on work that doesn't exist yet. Start the specific agent the work needs.
-- Don't start the watcher daemon without telling the user — it's a long-running
-  process that starts agents reactively and spends tokens on its own schedule.
+- Don't start the watcher daemon without telling the user — it is a long-running
+  process that hosts declared workflow triggers, schedules, sync, and
+  supervision, any of which may spend tokens.
 - Don't over-staff the roster. Add agents as the work appears, not preemptively.
 
-## Coordination is the chain, not pipelines
+## Coordination uses saved workflows
 
-Fleet's coordination model is the reactive label/event chain. Route work through
-it. The legacy `fleet pipeline` machinery is not the path — don't build your
-operation around it.
+Route multi-step work through saved typed workflows. Do not build new operation
+around legacy `fleet pipeline` commands or agent `subscribes_to` fields.

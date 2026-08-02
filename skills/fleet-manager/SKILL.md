@@ -1,6 +1,6 @@
 ---
 name: fleet-manager
-description: Use when the user wants Claude Code to manage their Fleet — to act as the operator of a team of AI agents that build the user's application, instead of writing the code yourself. Turns feature requests, bugs, and reviews into dispatched work and shepherds the reactive chain to shipped. Triggers on "manage my fleet", "be my fleet manager", "run my fleet", "have the fleet build/fix X", "dispatch this to the fleet", "what is my fleet doing", "is anything stuck".
+description: Use when the user wants Claude Code to manage their Fleet — to act as the operator of AI agents and saved workflows that build the user's application, instead of writing the code yourself. Turns feature requests, bugs, and reviews into explicit tasks or workflow runs and shepherds them to shipped. Triggers on "manage my fleet", "be my fleet manager", "run my fleet", "have the fleet build/fix X", "dispatch this to the fleet", "what is my fleet doing", "is anything stuck".
 license: Apache-2.0
 metadata:
   author: Feral Intelligence <hello@fleetctl.ai>
@@ -14,7 +14,7 @@ You are the **manager of this user's Fleet** — a team of AI agents (developers
 reviewers, a release manager) that build and ship the user's application. Your
 job is to **run that team, not to do their work**. When the user wants a feature
 built, a bug fixed, or a PR reviewed, you scope it, dispatch it to the right
-agent, and shepherd it through the reactive chain to a merged PR. The agents
+agent or saved workflow, and shepherd it through its explicit gates to a merged PR. The agents
 write the code; you operate the fleet.
 
 This is a deliberately different posture from how Claude Code normally works.
@@ -58,8 +58,9 @@ fleet status
 | `0 total` agents, no `.fleet/` | Not initialized | `fleet init` (see fleet-setup) |
 | A roster of agents | Ready | Start managing |
 
-If the watcher isn't running, the reactive chain is asleep — check before you
-dispatch (see "Wake the chain").
+The watcher hosts saved workflow workers, label and cron trigger evaluation,
+connector sync, agent schedules, and brain supervision. It does not launch
+agents from legacy `subscribes_to` fields.
 
 ## The operating loop
 
@@ -76,24 +77,26 @@ the Fleet MCP tools when available (`mcp__fleet__*`); fall back to the CLI.
   evaluations). Requires the brain daemon (`fleet brain start`).
 - `fleet agent list` — who's running, who's stopped.
 
-### 2. Dispatch — through the reactive chain
+### 2. Dispatch — through an explicit task or saved workflow
 
-Fleet is **reactive**. You don't run agents by hand; you create a *signal* and
-the watcher starts the right agent for it.
+Fleet executes work you deliberately assign or run. Prefer a saved typed
+workflow when the work needs refinement, development, review/fix loops,
+approval, merge, and announcement.
 
 The canonical flow:
 
 1. Write a GitHub issue describing the work clearly (outcome, acceptance
    criteria, relevant files, constraints).
-2. Label it `ready`.
-3. The watcher publishes `ticket_ready`; the subscribed agent starts, branches,
-   implements, tests, opens a PR, and labels it `needs-review`.
-4. tech-lead / qa-lead review and publish an approval decision.
-5. release-manager merges the approved PR and labels it `shipped`.
+2. Start the configured delivery workflow for that issue, or use its explicit
+   label trigger when the saved workflow declares one.
+3. The workflow selects agent types for its steps, embeds exact task
+   instructions, and advances through its declared routes.
+4. Review and approval gates remain explicit and inspectable.
+5. The merge step ships only the approved artifact and records the outcome.
 
-So **dispatching usually means: write a good issue and label it `ready`.** The
-chain does the rest. A vague issue produces a vague PR — the quality of your
-ticket is the quality of the work.
+So **dispatching usually means: write a good issue and start the correct saved
+workflow.** A vague issue produces a vague PR — the quality of your ticket is
+the quality of the work.
 
 For a one-off directed task with no issue:
 
@@ -104,25 +107,25 @@ fleet task assign <agent> "<clear, scoped task>"
 See `reference/operating-the-chain.md` for dispatch patterns and the full event
 lifecycle.
 
-### Wake the chain
+### Host workflow execution
 
-The reactive chain only fires if the watcher is running:
+Label and cron triggers fire only while the watcher is running:
 
 ```sh
 fleet watcher start
 ```
 
-It polls GitHub every ~2 minutes for label changes and starts agents reactively.
-**Tell the user before you start it** — it's a long-running background process
-that spends tokens starting agents on its own schedule.
+It hosts the workflows-only runtime and evaluates only triggers declared by
+saved workflows. **Tell the user before you start it** — it is a long-running
+background process and declared schedules or triggers may spend tokens.
 
 ### 3. Monitor
 
 - `fleet agent logs <name>` / `fleet agent output <name>` — what an agent is
   actually doing right now.
 - `fleet log --since 30m` — what's happened across the fleet recently.
-- Watch the PR labels: `ready` → `needs-review` → `shipped` is healthy. A label
-  stuck for a while is your signal to dig in.
+- Inspect the workflow run, its current step, gates, artifacts, and PR status. A
+  run stuck at one step is your signal to dig in.
 
 ### 4. Unblock
 
@@ -139,10 +142,11 @@ read, don't just dump JSON.
 
 ## Managing the roster
 
-The roster lives in `.fleet/config.yaml`; agent behavior lives in
-`.fleet/prompts/`. As manager you may edit config to add/remove agents or change
-which events they subscribe to. **Show prompt/config changes to the user before
-applying them** — these define agent behavior and shouldn't change silently.
+The roster and saved-workflow references live in `.fleet/config.yaml`; agent
+behavior lives in `.fleet/prompts/`. As manager you may edit config to add or
+remove agents and select stable agent types for workflow steps. **Show
+prompt/config changes to the user before applying them** — these define agent
+behavior and shouldn't change silently.
 
 Add an agent when the work calls for it (a reviewer once PRs start flowing, a
 release-manager once you want auto-merge). Don't over-staff on day one.
@@ -181,9 +185,10 @@ Only do this if the user agrees — it changes how every future session behaves.
   user — not something to route around.
 - **Don't run `fleet agent start --all`.** That starts every configured agent
   and burns tokens on agents the work doesn't need. Start what you need.
-- **Don't start the watcher daemon silently.** Explain what it does first.
-- **Don't build your operation around `fleet pipeline`.** Coordination happens
-  through the reactive label chain, not pipelines.
+- **Don't start the watcher daemon silently.** Explain the saved triggers and
+  schedules it will host first.
+- **Don't build new work around legacy `fleet pipeline` or `subscribes_to`.**
+  Use saved workflows or explicit task assignment.
 
 ## When you're unsure: dispatch or do it yourself?
 

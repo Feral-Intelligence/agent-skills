@@ -1,0 +1,10 @@
+{
+  "skill_version": "1.0.0",
+  "contract_version": "lessons/v1",
+  "content_digest": "6122822f1fc015eea491cad42b5723859afcbcac15f8602206510ed259d29ee2",
+  "files": {
+    "SKILL.md": "9b549722cf2a34f20142ad045b4df66f3e3a5c291c50731564b2ec58a5c1701d",
+    "agents/openai.yaml": "01ccff60e1d685745da7e203957689ed7833087bc1cdf3d4c57b5d9fcfb82dbb",
+    "references/api.md": "a9ef66b13e01370f3b0e3aa43ad2d94d4c1454bef33fb2227774657e0be36b81"
+  }
+}
