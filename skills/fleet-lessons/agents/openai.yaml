@@ -1,0 +1,6 @@
+interface:
+  display_name: "Use Fleet Lessons"
+  short_description: "Apply and govern learned working preferences"
+  default_prompt: "Use $fleet-lessons to capture this correction as governed policy and apply it safely."
+policy:
+  allow_implicit_invocation: true

@@ -6,15 +6,15 @@ Common failures during `fleet-setup` and how to fix them.
 
 ### `curl: command not found`
 
-macOS ships with curl. If it's missing, something is very wrong with the user's shell environment. On Linux, install via `apt install curl` or `dnf install curl`.
+macOS ships with curl. On Linux: `apt install curl` or `dnf install curl`.
 
 ### `install: line N: sha256sum: command not found` (macOS)
 
-macOS uses `shasum -a 256`, not `sha256sum`. The installer at `/install` already handles this with a fallback chain. If it's failing, check the installer script at https://fleetctl.ai/install for regressions.
+macOS uses `shasum -a 256`. The installer at https://fleetctl.ai/install already has a fallback. If it still fails, re-fetch that script; do not invent a checksum command.
 
 ### Install succeeds but `fleet version` says `dev`
 
-The binary was built without the ldflags version injection. This should not happen with a prebuilt release. Tell the user to re-run the installer — it may have downloaded from a cached stale location:
+The binary was built without release ldflags. Re-run the installer:
 
 ```sh
 curl -fsSL https://fleetctl.ai/install | sh
@@ -23,44 +23,35 @@ curl -fsSL https://fleetctl.ai/install | sh
 
 ### `~/.local/bin/fleet: cannot execute binary file`
 
-Wrong architecture. The installer auto-detects OS/arch, but if the user is on an unusual setup (e.g., running x86 Docker on Apple Silicon), they may have downloaded the wrong tarball. Check with:
+Wrong architecture. Check `file ~/.local/bin/fleet` against `uname -m`.
 
-```sh
-file ~/.local/bin/fleet
-uname -m
-```
-
-## License / registration failures
+## Registration and sign-in
 
 ### `fleet: not registered — run: fleet admin register`
 
-The user skipped registration, or the instance credentials at `~/.fleet/controlplane.json` got wiped. Re-run:
+Instance credentials at `~/.fleet/controlplane.json` are missing. Re-run:
 
 ```sh
-fleet admin register --url https://dashboard.fleetctl.ai --code <fresh-code>
+fleet admin register --url https://app.fleetctl.ai --code <fresh-code>
 ```
 
-### `fleet: license expired — renew at your Fleet admin dashboard`
+Generate the code at https://app.fleetctl.ai.
 
-The user's license has expired. Send them to https://dashboard.fleetctl.ai to renew. There is no way to bypass this.
+### `expired` or `invalid registration code`
 
-### `fleet: license revoked`
+Codes are single-use and expire about 15 minutes after minting. Generate a fresh code and register immediately.
 
-Same as expired — the user needs to contact Feral Intelligence. Do not attempt any workarounds.
+### License expired or revoked
 
-### `expired code` or `invalid registration code`
+Send the user to https://app.fleetctl.ai. There is no bypass.
 
-Registration codes are single-use and expire 15 minutes after generation. Tell the user to:
+### Hosted tools return authentication errors
 
-1. Open https://dashboard.fleetctl.ai
-2. Generate a fresh registration code
-3. Run `fleet admin register --url https://dashboard.fleetctl.ai --code <new-code>` immediately
+`fleet admin register` is the machine. The human must also run `fleet login`. Treat those as distinct. Never paste an access token into a prompt.
 
-## Prerequisite failures
+## Prerequisites
 
 ### `tmux: command not found`
-
-Fleet agents run in tmux sessions. Install tmux:
 
 | OS | Command |
 |---|---|
@@ -69,9 +60,7 @@ Fleet agents run in tmux sessions. Install tmux:
 | Fedora/RHEL | `sudo dnf install tmux` |
 | Arch | `sudo pacman -S tmux` |
 
-### `gh: command not found`
-
-Fleet uses the GitHub CLI for repo polling, label management, and PR review. Install:
+### `gh: command not found` or `gh auth status` fails
 
 | OS | Command |
 |---|---|
@@ -80,109 +69,58 @@ Fleet uses the GitHub CLI for repo polling, label management, and PR review. Ins
 | Fedora/RHEL | `sudo dnf install gh` |
 | Arch | `sudo pacman -S github-cli` |
 
-After install:
+Then `gh auth login` and `gh auth status`.
 
-```sh
-gh auth login
-gh auth status
-```
+## `fleet up` / `fleet init` failures
 
-### `gh auth status` says "not logged in"
+### `.fleet/config.yaml already exists`
 
-Run `gh auth login` and follow the prompts. Fleet needs this for the watcher daemon to poll labels and the brain daemon to read PR reviews.
-
-## `fleet init` failures
-
-### `.fleet/config.yaml already exists. Use --force to overwrite`
-
-The repo was already initialized. Either accept the existing config (just run `fleet agent list`) or explicitly overwrite:
-
-```sh
-fleet init --force
-```
-
-Warn the user that `--force` will wipe their `.fleet/prompts/` directory and regenerate from the template. Any customizations they made will be lost unless committed to git.
+`fleet up` skips init when the repo is already scaffolded. That is success. Only run `fleet init --force` if the user explicitly accepts regenerating `.fleet/prompts/`.
 
 ### `fleet: not a git repository`
 
-The user is running `fleet init` outside a git repo. `cd` to the actual repo root and retry. Fleet is designed for per-repo installation — it writes `.fleet/config.yaml` alongside `.git/`.
+`cd` to the repo root. Fleet writes `.fleet/config.yaml` next to `.git/`.
 
 ### Unknown template name
 
-Run `fleet init --list-templates` to see available templates. As of 2026, the supported templates are:
+```sh
+fleet init --list-templates
+```
 
-- `go-service` — Go backend service with Docker and CI
-- `fullstack` — Frontend + Node backend + Docker + CI
-- `data-pipeline` — Python data engineering with Docker
-- `devops` — Infrastructure with Docker, CI, and serverless
+Supported presets: `go-service`, `fullstack`, `data-pipeline`, `devops`.
+
+### Doctor still failing after `fleet up`
+
+Print `fleet doctor` and fix the failing required checks. Do not claim setup is complete.
 
 ## Agent start failures
 
-### `fleet: tmux session already exists`
+### `no such agent` / start of a catalog slug fails
 
-An agent with that name is already running. List them:
+`fleet agent start` takes a **database name**, not a catalog id. List first, or spawn:
 
 ```sh
-tmux ls
 fleet agent list
+fleet template spawn <catalog-id> --name <name>
+fleet agent start <name>
 ```
 
-Stop it first if needed:
+### `tmux session already exists`
 
-```sh
-fleet agent stop <name>
-```
+The agent is already running. `fleet agent list` / `tmux ls`. Stop with `fleet agent stop <name>` only if the user wants a restart.
 
-### Agent starts but immediately exits
-
-Attach to the tmux session to see the actual error:
+### Agent starts then exits
 
 ```sh
 tmux attach -t fleet-<agent-name>
 ```
 
-Common causes:
-- Claude Code CLI not installed or not on PATH
-- API key not set in environment
-- Prompt file syntax error in `.fleet/prompts/<agent>.md`
+Common causes: coding CLI missing from PATH, missing credentials, prompt file errors. Also run `fleet skills install --dry-run`.
 
-### `fleet: license check failed: network error`
+## PATH
 
-Fleet verifies the license with the control plane at startup. If the user is offline or the control plane is unreachable, Fleet caches the license for 24 hours. If they've been offline longer than that, they need to reconnect and re-verify.
+If `fleet: command not found` after install, append `~/.local/bin` to PATH (see the skill) and re-open the shell.
 
-## PATH issues
+## Nothing here matches
 
-### `fleet: command not found` after install
-
-`~/.local/bin` is not in PATH. Fix by appending to the appropriate shell rc file:
-
-```sh
-# zsh
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-
-# bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-
-# fish
-fish_add_path $HOME/.local/bin
-```
-
-Verify:
-
-```sh
-which fleet
-fleet version
-```
-
-## Nothing in this list matches
-
-Run `fleet doctor`. It checks prerequisites, sockets, paths, and common misconfigurations. Paste the output and work from there.
-
-If `fleet doctor` passes but the issue persists, the user should open an issue at https://github.com/Feral-Intelligence/fleet/issues with:
-
-1. `fleet version` output
-2. `fleet doctor` output
-3. OS and architecture (`uname -a`)
-4. The exact command they ran and its output
+Run `fleet doctor`. If it passes and the issue remains, open https://github.com/Feral-Intelligence/fleet/issues with `fleet version`, `fleet doctor`, `uname -a`, and the exact command output.
