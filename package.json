@@ -1,11 +1,12 @@
 {
   "name": "@feral-intelligence/agent-skills",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Drop-in agent skills for Fleet — tested with a scripted eval harness",
   "scripts": {
     "test": "node tests/evals.mjs",
+    "test:contract": "node tests/contract.mjs",
     "test:one": "node tests/evals.mjs --only"
   },
   "engines": {

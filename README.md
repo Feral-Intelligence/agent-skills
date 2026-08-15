@@ -1,6 +1,10 @@
 # Feral Intelligence — Agent Skills
 
-Drop-in skills that teach Claude Code how to set up and operate Fleet.
+Drop-in skills that teach Claude Code (and any SKILL.md client) how to set up
+and operate Fleet. Canonical copies are authored in
+[Feral-Intelligence/fleet](https://github.com/Feral-Intelligence/fleet) and
+served from [fleetctl.ai/.well-known/agent-skills](https://fleetctl.ai/.well-known/agent-skills/).
+This repo is the `npx skills add` install source.
 
 ## Install
 
@@ -16,42 +20,54 @@ Just one:
 npx skills add https://github.com/Feral-Intelligence/agent-skills --skill fleet-setup
 ```
 
-Then, in your AI assistant:
+Then:
 
 > Set up Fleet in this repo
 
-Claude Code will detect your OS, run the installer, walk you through `fleet admin register`, initialize the repo with `fleet init`, and suggest a first agent based on what it finds in the codebase.
+The assistant installs the binary, registers this machine, signs you in, runs
+`fleet up`, and installs Fleet skills.
 
-Once Fleet is running, install `fleet-manager` and Claude Code becomes the operator of your fleet:
+Once Fleet is running:
 
-> Manage my fleet — have the team build a dark-mode toggle for the settings page
+> Manage my fleet — have the team add a dark-mode toggle to the settings page
 
-Instead of writing the code itself, it scopes the work, dispatches it to the right agent, and shepherds the reactive chain (review → merge → ship) to done.
+It scopes the work, starts the tenant's saved workflow (or `fleet task assign`
+for a one-off), and stays with the run until a reviewed merge. It does not write
+the application code itself.
+
+Corrections you want remembered:
+
+> Remember this as a Lesson
+
+That path is `$fleet-lessons`.
 
 ## Available skills
 
 | Skill | What it does |
 |---|---|
-| [`fleet-setup`](./skills/fleet-setup) | Install Fleet, register your license, initialize the repo, start your first agent |
-| [`fleet-manager`](./skills/fleet-manager) | Make Claude Code the manager of your fleet — dispatch work to your agents and shepherd the reactive chain to shipped, instead of writing the code yourself |
+| [`fleet-setup`](./skills/fleet-setup) | Install Fleet, register, sign in, `fleet up`, install skills |
+| [`fleet-manager`](./skills/fleet-manager) | Operate the fleet through saved workflows instead of writing app code |
+| [`fleet-lessons`](./skills/fleet-lessons) | Load governed policy before work; propose, approve, and apply Lessons |
 
 ## What is Fleet?
 
-Fleet is a pure Go CLI for managing an AI agent fleet. Single binary, no Docker, no Node.js. Learn more at [fleetctl.ai](https://fleetctl.ai).
+Fleet is a Go CLI for managing an AI agent fleet. Single binary, no Docker in
+the runtime. Learn more at [fleetctl.ai](https://fleetctl.ai).
 
-Fleet is a paid product in invite-only beta. The binary is free to install and inspect, but every command that starts agents, daemons, or pipelines refuses to run without an active license. Request access at [fleetctl.ai/#contact](https://fleetctl.ai/#contact).
+Fleet is a paid product after a trial. The binary is free to install and inspect.
+Commands that start agents or daemons need an active entitlement. Start a trial
+at [app.fleetctl.ai](https://app.fleetctl.ai).
 
 ## Testing
 
-Skills are tested with a scripted eval harness: synthetic user prompts get sent to Claude with the skill pre-loaded as system context, and the response is checked against expected (and forbidden) patterns. Happy paths, edge cases, and anti-patterns (e.g., the skill must never suggest `go install` for Fleet) all get covered.
-
 ```sh
-npm test                           # all scenarios
-npm run test:one -- happy-path     # one scenario
+npm run test:contract              # stale-phrase and file-presence checks (no model)
+npm test                           # Claude Code headless evals
+npm run test:one -- happy-path     # one eval scenario
 EVAL_VERBOSE=1 npm test            # show full responses on failure
 ```
 
-Uses `claude -p` (Claude Code headless mode) as the backend, so it reuses your existing Claude Code auth. No `ANTHROPIC_API_KEY` required, no dependencies to install. Run it before every push.
+Uses `claude -p` for evals. Run `npm run test:contract` before every push.
 
 ## License
 
