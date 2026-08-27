@@ -17,18 +17,31 @@ import {
 const fleetSetupScenarios = [
   {
     name: "happy-path",
-    prompt: "Set up Fleet in this repo.",
+    prompt:
+      "Set up Fleet in this repo.\n\nfleet admin register --url https://app.fleetctl.ai --code nfr-testcode99",
     expect: [
-      /curl -fsSL https:\/\/fleetctl\.ai\/install \| sh/i,
-      /fleet admin register/i,
+      /fleet admin register --url https:\/\/app\.fleetctl\.ai --code nfr-testcode99/i,
       /fleet up/i,
       /fleet skills install/i,
-      /tmux/i,
-      /gh (auth|CLI)/i,
+      /~\/\.claude\/skills/i,
+      /~\/\.codex\/skills|--target ~\/\.codex\/skills\/fleet/i,
     ],
     forbid: [
-      /go install/i,
+      /ask me for a (registration )?code/i,
+      /get a code from the dashboard/i,
       /^(\$ )?fleet watcher start/m,
+    ],
+  },
+  {
+    name: "setup-without-code-in-paste",
+    prompt: "Set up Fleet in this repo.",
+    expect: [
+      /no (registration )?code|this message has no|paste has no/i,
+    ],
+    forbid: [
+      /ask me for a (registration )?code/i,
+      /get a code from the dashboard/i,
+      /fleet admin register --url \S+ --code nfr-/i,
     ],
   },
   {
@@ -47,21 +60,26 @@ const fleetSetupScenarios = [
     name: "no-license-yet",
     prompt: "I want to set up Fleet in my repo but I don't have a registration code. What do I do?",
     expect: [
-      /app\.fleetctl\.ai|start a trial|registration code/i,
+      /no (registration )?code|this message has no|paste has no|cannot register|stopping|stop/i,
     ],
     forbid: [
-      // Should NOT proceed to running the installer before getting a code
-      /^(\$ )?curl -fsSL https:\/\/fleetctl\.ai\/install \| sh/m,
+      /ask me for a (registration )?code/i,
+      /get a (registration )?code from the dashboard/i,
+      // Must not invent a real-looking code and register with it
+      /fleet admin register --url \S+ --code nfr-/i,
     ],
   },
   {
     name: "expired-registration-code",
     prompt: "I ran `fleet admin register --url https://app.fleetctl.ai --code abc123` and it said the code is expired. Now what?",
     expect: [
-      /generate (a )?(fresh|new)|app\.fleetctl\.ai/i,
-      /15 ?min|expir/i,
+      /expir/i,
+      /stop|cannot register|invalid|this (code|message)/i,
     ],
-    forbid: [],
+    forbid: [
+      /ask me for a (registration )?code/i,
+      /get a (registration )?code from the dashboard/i,
+    ],
   },
   {
     name: "not-in-git-repo",
@@ -71,13 +89,15 @@ const fleetSetupScenarios = [
   },
   {
     name: "go-service-repo",
-    prompt: "Set up Fleet in this repo. It's a Go CLI — has go.mod at the root, cmd/fleet/, and internal/ directories.",
+    prompt:
+      "Set up Fleet in this repo. It's a Go CLI — has go.mod at the root, cmd/fleet/, and internal/ directories.\n\nfleet admin register --url https://app.fleetctl.ai --code nfr-testcode99",
     expect: [/go-service/i, /backend|developer/i],
     forbid: [],
   },
   {
     name: "nextjs-repo",
-    prompt: "Set up Fleet. It's a Next.js app — package.json has next, react, tailwindcss as dependencies.",
+    prompt:
+      "Set up Fleet. It's a Next.js app — package.json has next, react, tailwindcss as dependencies.\n\nfleet admin register --url https://app.fleetctl.ai --code nfr-testcode99",
     expect: [/fullstack/i, /frontend/i],
     forbid: [],
   },
@@ -93,10 +113,22 @@ const fleetSetupScenarios = [
   {
     name: "avoid-go-install-suggestion",
     prompt: "Can I install Fleet via `go install github.com/feral-intelligence/fleet/cmd/fleet@latest` instead of curl | sh?",
-    expect: [/curl -fsSL https:\/\/fleetctl\.ai\/install \| sh|prebuilt binary/i],
+    expect: [/prebuilt binary|official installer|fleetctl\.ai\/install/i],
     forbid: [
       // Model must not endorse go install as equivalent
       /^(yes|sure)[,.]?\s.*go install/im,
+    ],
+  },
+  {
+    name: "skills-not-only-agents",
+    prompt:
+      "Set up Fleet in this repo. npx skills add already wrote .agents/skills/fleet-setup. fleet admin register --url https://app.fleetctl.ai --code nfr-testcode99",
+    expect: [
+      /\.claude\/skills/i,
+      /~\/\.codex\/skills|fleet skills install --target/i,
+    ],
+    forbid: [
+      /only .agents|that's enough|\.agents is (enough|fine|sufficient)/i,
     ],
   },
 ];
