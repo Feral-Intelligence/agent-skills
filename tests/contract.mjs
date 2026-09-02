@@ -62,6 +62,27 @@ for (const pattern of stale) {
 
 check(/fleet up/.test(readFileSync(join(skillsRoot, "fleet-setup", "SKILL.md"), "utf8")), "fleet-setup must teach fleet up");
 check(/fleet login/.test(readFileSync(join(skillsRoot, "fleet-setup", "SKILL.md"), "utf8")), "fleet-setup must teach fleet login");
+
+const setup = readFileSync(join(skillsRoot, "fleet-setup", "SKILL.md"), "utf8");
+check(/code already in the user message/i.test(setup), "fleet-setup must use a code already in the user message");
+check(/this message has no registration code/i.test(setup), "fleet-setup must stop when the paste has no code");
+check(!/Ask the user for a registration code/i.test(setup), "fleet-setup must not ask the user for a registration code");
+check(/~\/\.claude\/skills/.test(setup), "fleet-setup must write Claude Code personal skills path");
+check(/\.claude\/skills\/fleet-setup/.test(setup), "fleet-setup must copy itself into project .claude/skills");
+check(/~\/\.codex\/skills/.test(setup), "fleet-setup must write Codex global skills path");
+check(/fleet skills install --target/.test(setup), "fleet-setup must reuse fleet skills install --target (no second installer)");
+check(/not a gate/i.test(setup), "fleet-setup must not treat gh auth as a gate");
+check(!/```sh\ncurl -fsSL/.test(setup), "fleet-setup must not present curl | sh as a paste block");
+
+const skillPaths = join(skillsRoot, "fleet-setup", "reference", "skill-paths.md");
+check(existsSync(skillPaths), "missing fleet-setup/reference/skill-paths.md");
+if (existsSync(skillPaths)) {
+  const paths = readFileSync(skillPaths, "utf8");
+  check(/~\/\.claude\/skills/.test(paths), "skill-paths must list ~/.claude/skills");
+  check(/~\/\.codex\/skills/.test(paths), "skill-paths must list ~/.codex/skills");
+  check(/Claude Code does not read/.test(paths), "skill-paths must say Claude Code does not read .agents");
+}
+
 check(/saved workflow/.test(readFileSync(join(skillsRoot, "fleet-manager", "SKILL.md"), "utf8")), "fleet-manager must teach saved workflows");
 check(/lessons\.bootstrap/.test(readFileSync(join(skillsRoot, "fleet-lessons", "SKILL.md"), "utf8")), "fleet-lessons must teach bootstrap");
 

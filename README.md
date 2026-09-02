@@ -20,12 +20,15 @@ Just one:
 npx skills add https://github.com/Feral-Intelligence/agent-skills --skill fleet-setup
 ```
 
-Then:
+Then paste (the live `register` line comes from the dashboard/drip):
 
 > Set up Fleet in this repo
+>
+> `fleet admin register --url https://app.fleetctl.ai --code <code>`
 
-The assistant installs the binary, registers this machine, signs you in, runs
-`fleet up`, and installs Fleet skills.
+The assistant installs the binary, registers this machine with that code, signs
+you in, runs `fleet up`, and writes skills where Claude Code and Codex load
+them. It does not ask you to curl or to fetch a code.
 
 Once Fleet is running:
 
